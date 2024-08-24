@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/db_style.css') }}">
+    <title>Projects</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Projects</h1>
+        </header>
+        <div class="projects-grid">
+            {% for project in projects %}
+            <div class="project-tile">
+                <a href="{{ url_for('main.projects', project_name=project.name) }}">
+                    <h3>{{ project.name }}</h3>
+                    <p>Status: {{ project.status }}</p>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
