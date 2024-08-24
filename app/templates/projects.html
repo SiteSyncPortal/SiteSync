@@ -11,16 +11,68 @@
         <header>
             <h1>Projects</h1>
         </header>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-danger">
+              <ul>
+                {% for message in messages %}
+                  <li>{{ message }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% endwith %}
+
         <div class="projects-grid">
             {% for project in projects %}
             <div class="project-tile">
-                <a href="{{ url_for('main.projects', project_name=project.name) }}">
-                    <h3>{{ project.name }}</h3>
+                <a href="{{ url_for('main.projects', project_name=project.project_name) }}">
+                    <h3>{{ project.project_name }}</h3>
+                    <p>Location: {{ project.location }}</p>
+                    <p>Start Date: {{ project.start_date }}</p>
+                    <p>End Date: {{ project.end_date }}</p>
                     <p>Status: {{ project.status }}</p>
                 </a>
             </div>
             {% endfor %}
+
+            <!-- Add Project Tile -->
+            <div class="add-project-tile" onclick="showAddProjectForm()">
+                <h3>+ Add Project</h3>
+            </div>
         </div>
+
+        <!-- Hidden form for adding a new project -->
+<div id="addProjectFormContainer" style="display:none;">
+    <h2>Add New Project</h2>
+    <form id="addProjectForm" method="POST" action="{{ url_for('main.add_project') }}" onsubmit="return validateAndSubmitProjectForm();">
+        <label for="project_name">Project Name</label>
+        <input type="text" id="project_name" name="project_name" required>
+
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location" required>
+
+        <label for="start_date">Start Date</label>
+        <input type="date" id="start_date" name="start_date" required>
+
+        <label for="end_date">End Date</label>
+        <input type="date" id="end_date" name="end_date" required>
+
+        <label for="status">Status</label>
+        <select id="status" name="status" required>
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+
+        <button type="submit">Add Project</button>
+    </form>
+</div>
+
     </div>
+
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </body>
+
 </html>

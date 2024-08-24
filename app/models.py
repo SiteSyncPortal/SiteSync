@@ -1,30 +1,33 @@
-from flask_pymongo import PyMongo
-from bson.objectid import ObjectId
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+from flask import current_app
 
-# Create a global PyMongo instance
-mongo = PyMongo()
-
+# Initialize the MongoDB client and database connection
 def init_app(app):
-    global mongo
-    mongo.init_app(app)
+    uri = app.config["MONGO_URI"]
+    client = MongoClient(uri, server_api=ServerApi('1'))
+    app.db = client.get_database("SiteSync")  # Get the default database from the URI
 
-# def get_projects():
-#     # Use the globally initialized mongo instance
-#     projects = mongo.db.projects.find()
-#     return list(projects)  # Convert the cursor to a list of projects
-def get_projects():
     try:
-        projects = mongo.db.projects.find()
-        print(projects)
-        return list(projects)
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+        print(f"Database name: {app.db.name}")  # Debugging: Check the database name
     except Exception as e:
-        print(f"Error accessing MongoDB: {e}")
-        return []
+        print(f"Failed to connect to MongoDB: {e}")
 
-def add_project(name, description):
-    # Use the globally initialized mongo instance
-    project_id = mongo.db.projects.insert_one({
-        'name': name,
-        'description': description
+
+def get_projects():
+    # Use the global `app.db` to access the projects collection
+    projects = current_app.db.projects.find()
+    return list(projects)
+
+def add_project_to_db(project_name, location, start_date, end_date, status):
+    # Use the global `app.db` to access the projects collection
+    project_id = current_app.db.projects.insert_one({
+        'project_name': project_name,
+        'location': location,
+        'start_date': start_date,
+        'end_date':end_date,
+        'status':status
     }).inserted_id
     return project_id
