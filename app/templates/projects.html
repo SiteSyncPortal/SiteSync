@@ -27,7 +27,7 @@
         <div class="projects-grid">
             {% for project in projects %}
             <div class="project-tile">
-                <a href="{{ url_for('main.projects', project_name=project.project_name) }}">
+                <a href="{{ url_for('main.select_report', project_name=project.project_name, project_location=project.location) }}">
                     <h3>{{ project.project_name }}</h3>
                     <p>Location: {{ project.location }}</p>
                     <p>Start Date: {{ project.start_date }}</p>

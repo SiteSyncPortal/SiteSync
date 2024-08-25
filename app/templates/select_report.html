@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/db_style.css') }}">
+    <title>select_report</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Select Your Report</h1>
+        </header>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-danger">
+              <ul>
+                {% for message in messages %}
+                  <li>{{ message }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="projects-grid">
+            
+                <div class="project-tile">
+                    <a href="{{ url_for('main.projects') }}/{{ project_name }}/{{ project_location }}">
+                        <h3>Daily Progress Report (DPR)</h3>
+                        
+                    </a>
+                </div>
+                <div class="project-tile">
+                    <!-- <a href="{{ url_for('main.projects' )}}"> -->
+                        <h3>Site Expenses</h3>
+                        
+                    </a>
+                </div>
+            
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+
+</html>

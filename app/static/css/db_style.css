@@ -101,10 +101,12 @@ header h1 {
 
 .project-tile {
     flex: 1 1 calc(33.333% - 20px);
+    position: relative;
     background-color: #f9f9f9;
     padding: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
@@ -143,3 +145,29 @@ header h1 {
     background-color: #d0d0d0;
 }
 
+
+.delete-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 13px;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+    background-color: #ff1a1a;
+}
+
+.add-project-tile h3 {
+    margin: 0;
+    font-size: 16px;
+}

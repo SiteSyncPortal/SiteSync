@@ -38,3 +38,32 @@ function validateAndSubmitProjectForm() {
     // If all conditions are met, submit the form
     document.getElementById('addProjectForm').submit();
 }
+
+function confirmDeletion(projectId) {
+    if (confirm("Are you sure you want to delete this project?")) {
+        deleteProject(projectId);
+    }
+}
+
+function deleteProject(projectId) {
+    fetch('/delete_project', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ project_id: projectId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Project deleted successfully.');
+            window.location.reload();
+        } else {
+            alert('Failed to delete the project.');
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the project.');
+    });
+}
