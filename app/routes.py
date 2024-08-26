@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, request
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, request, session
 from app.models import get_projects, add_project_to_db, delete_project_in_db
 
 main = Blueprint('main', __name__)
@@ -13,9 +13,10 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        if username == 'partner' and password == "partner":  # Example check
+        if (username == 'partner' and password == "partner") or (username == 'account' and password == "account"):  # Example check
+            session['username'] = username
             return redirect(url_for('main.partner_dashboard'))
-
+    print(username)
     return render_template('login.html')
 
 @main.route('/partner/dashboard', methods=['GET', 'POST'])
@@ -31,7 +32,8 @@ def partner_dashboard():
 @main.route('/projects', methods=['GET'])
 def projects():
     projects = get_projects()
-    return render_template('projects.html', projects=projects)
+    username = session.get('username')
+    return render_template('projects.html', projects=projects, username=username)
 
 @main.route('/select_report')
 def select_report():
@@ -48,23 +50,6 @@ def add_project():
     end_date = request.form.get('end_date')
     status = request.form.get('status')
 
-    # Condition 1: Start date should be less than end date
-    if end_date and start_date >= end_date:
-        flash("Start date must be earlier than the end date.")
-        return redirect(url_for('main.projects'))
-
-    # Condition 2: If status is "In Progress", set end date to None
-    if status == "In Progress":
-        end_date = None
-
-    # Condition 3: If project with same name and location exists raise error
-    existing_projects = get_projects()
-    for project in existing_projects:
-        if project['project_name'].strip().lower() == project_name and project['location'].strip().lower() == location:
-            flash("A project with the same name and location already exists.")
-            return redirect(url_for('main.projects'))
-        
-    # Add the project to the database if all conditions are met
     add_project_to_db(project_name, location, start_date, end_date, status)
     return redirect(url_for('main.projects'))
 

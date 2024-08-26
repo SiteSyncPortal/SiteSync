@@ -1,6 +1,6 @@
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-from flask import current_app 
+from flask import current_app, flash
 from bson.objectid import ObjectId
 
 # Initialize the MongoDB client and database connection
@@ -22,6 +22,24 @@ def get_projects():
     return list(projects)
 
 def add_project_to_db(project_name, location, start_date, end_date, status):
+    
+    # Condition 1: Start date should be less than end date
+    if end_date and start_date >= end_date:
+        flash("Start date must be earlier than the end date.")
+        return False
+
+    # Condition 2: If status is "In Progress", set end date to None
+    if status == "In Progress":
+        end_date = None
+
+    # Condition 3: If project with same name and location exists raise error
+    existing_projects = get_projects()
+    for project in existing_projects:
+        if project['project_name'].strip().lower() == project_name and project['location'].strip().lower() == location:
+            flash("A project with the same name and location already exists.")
+            return False
+        
+    # Add the project to the database if all conditions are met
     project_id = current_app.db.projects.insert_one({
         'project_name': project_name,
         'location': location,
