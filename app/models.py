@@ -57,3 +57,24 @@ def delete_project_in_db(project_id):
         return {'success': True}
     else:
         return {'success': False}
+
+def get_dpr_data(project_name, location):
+    data = list(current_app.db.dpr.find({"Project": project_name, "location": location.upper()}))
+    # dates = [entry['Date'] for entry in data if 'Date' in entry]
+    # print(data)
+    # # Convert dates to 'YYYY-MM-DD' format
+    # formatted_dates = []
+    # for date in dates:
+    #     if date.count('-')==1:
+    #         continue 
+    #     day, month, year = date.split('-')
+    #     formatted_dates.append(f"{year}-{month.zfill(2)}-{day.zfill(2)}")
+
+    # return formatted_dates
+    for item in data:
+        item['_id'] = str(item['_id'])
+        if item['Date'].count('-')!=2:
+            continue
+        day, month, year= item['Date'].split('-')
+        item['Date']= f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+    return data

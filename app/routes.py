@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, request, session
-from app.models import get_projects, add_project_to_db, delete_project_in_db
+from app.models import get_projects, add_project_to_db, delete_project_in_db, get_dpr_data
 
 main = Blueprint('main', __name__)
 
@@ -70,12 +70,19 @@ def project_details(project_name, location):
     pl_value = 1000.00  # Example value, replace with actual logic
     total_pl_value = 5000.00  # Example value, replace with actual logic
 
+    # Get the DPR data (dates)
+    dpr_data = get_dpr_data(project_name, location)
+    dpr_dates = [item['Date'] for item in dpr_data]
+
     if request.method == 'POST':
-        selected_date = request.form.get('calendar')
-        flash(f"Selected date: {selected_date}")
-    # Use the project_name and location parameters in your view logic
+        selected_date = request.form.get('selected_date')
+        project_name_input = request.form.get('project_name')
+        # Handle the form submission logic here
+        flash(f"Selected date: {selected_date} for project: {project_name_input}")
+
     return render_template('dpr.html', project_name=project_name, 
                            location=location, 
                            pl_value=pl_value, 
-                           total_pl_value=total_pl_value)
-   
+                           total_pl_value=total_pl_value,
+                           dpr_dates=dpr_dates,
+                           dpr_data=dpr_data)
