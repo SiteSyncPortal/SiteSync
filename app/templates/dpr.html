@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/db_style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pl_calendar_style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar_style.css') }}">
     <title>{{ project_name }} - {{ location }}</title>
 </head>
 <body>
@@ -33,12 +33,67 @@
 
         <!-- Calendar in the Center -->
         <div class="calendar-container">
-            <form action="{{ url_for('main.project_details', project_name=project_name, location=location) }}" method="POST">
-                <label for="calendar">Select a date:</label><br>
-                <input type="date" id="calendar" name="calendar" required><br>
+            <div class="calendar-nav">
+                <button id="prev">❮</button>
+                <span id="month-year"></span>
+                <button id="next">❯</button>
+            </div>
+            <table class="calendar">
+                <thead>
+                    <tr>
+                        <th>Sun</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                    </tr>
+                </thead>
+                <tbody id="calendar-body">
+                    <!-- Calendar dates will be dynamically generated -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Hidden JSON Data for Dates -->
+        <div id="calendar-data" style="display:none;">
+            {{ dpr_dates|tojson }}
+        </div>
+       
+        <!-- Hidden JSON Data for Dates -->
+        <div id="calendar-green-data" style="display:none;">
+            {{ dpr_data|tojson }}
+        </div>
+
+        <!-- Dynamic Table for DPR Data -->
+        <div id="dpr-table-container" style="display:none;">
+            <h3>Daily Progress Report for <span id="selected-date"></span></h3>
+            <table id="dpr-table">
+                <thead>
+                    <tr>
+                        <!-- Add table headers dynamically -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Add table rows dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Form for White Dates -->
+        <div id="white-date-form" style="display:none;">
+            <h3>Enter Details for <span id="white-selected-date"></span></h3>
+            <form method="post" action="">
+                <input type="hidden" name="selected_date" id="form-selected-date" value="">
+                <label for="project-name">Project Name:</label>
+                <input type="text" id="project-name" name="project_name" required>
+                <!-- Add other form fields as needed -->
                 <button type="submit">Submit</button>
             </form>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/calendar_script.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,178 @@
+/* Inventory Page Styles */
+.container {
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+header h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.tabs {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab-button {
+    background-color: transparent;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.3s, border-bottom 0.3s;
+}
+
+.tab-button.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+
+.tab-button:hover {
+    color: #0056b3;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.inventory-entry,
+.sell-entry {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.inventory-entry label,
+.sell-entry label {
+    margin-right: 10px;
+    font-size: 14px;
+    color: #555;
+    width: 80px;
+}
+
+.inventory-entry input[type="text"],
+.sell-entry input[type="text"],
+.inventory-entry input[type="number"],
+.sell-entry input[type="number"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+#add-entry,
+#add-sell-entry {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-bottom: 15px;
+}
+
+#add-entry:hover,
+#add-sell-entry:hover {
+    background-color: #0056b3;
+}
+
+button[type="submit"] {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+    background-color: #218838;
+}
+
+/* Autocomplete Container */
+.autocomplete {
+    position: relative;
+    display: inline-block;
+}
+.suggestions-dropdown {
+    position: absolute;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: calc(100% - 2px); /* Match the width of the input field */
+    display: none; /* Initially hidden */
+}
+
+.suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+/* Ensure the table scales well */
+.inventory-table-container {
+    width: 100%;
+    overflow-x: auto; /* Enables horizontal scrolling if the table overflows */
+    margin-top: 20px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+table.inventory-table {
+    width: 100%;
+    table-layout: fixed; /* Fix the width of table columns */
+    border-collapse: collapse;
+}
+
+table.inventory-table th, table.inventory-table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+table.inventory-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: bold;
+}
+
+table.inventory-table td {
+    color: #555;
+}
+
+/* Make the table responsive */
+@media (max-width: 768px) {
+    .inventory-table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    table.inventory-table th, table.inventory-table td {
+        font-size: 12px;
+        padding: 8px;
+    }
+}

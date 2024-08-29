@@ -57,3 +57,49 @@ def delete_project_in_db(project_id):
         return {'success': True}
     else:
         return {'success': False}
+
+def get_dpr_data(project_name, location):
+    data = list(current_app.db.dpr.find({"Project": project_name, "location": location.upper()}))
+    for item in data:
+        item['_id'] = str(item['_id'])
+        if item['Date'].count('-')!=2:
+            continue
+        day, month, year= item['Date'].split('-')
+        item['Date']= f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+    return data
+
+def get_inventory_data(project_name,location):
+    data = list(current_app.db.inventory.find({"Project": project_name, "location": location}))
+    return data
+
+def add_inventory_in_db(project_name, location, item_name, quantity):
+    result = current_app.db.inventory.update_one(
+        {"Project": project_name, "location": location, "Item": item_name},
+        {"$inc": {"Quantity": quantity}},
+        upsert=True
+    )
+    return result
+
+def sell_inventory_in_db(project_name, location, item_name, quantity):
+    inventory_item = current_app.db.inventory.find_one(
+        {"Project": project_name, "location": location, "Item": item_name}
+    )
+    
+    
+
+    if not inventory_item:
+        return {'success': False, 'message': f"Item '{item_name}' not found in inventory."}
+
+    if inventory_item['Quantity'] < quantity:
+        return {'success': False, 'message': f"Not enough '{item_name}' in stock. Available quantity: {inventory_item['Quantity']}"}
+
+    current_app.db.inventory.update_one(
+        {"Project": project_name, "location": location, "Item": item_name},
+        {"$set": {"Quantity": quantity}}
+    )
+
+    
+    return {'success': True, 'message': f"Sold {quantity} of '{item_name}' successfully."}
+
+def get_matching_items(query):
+    return current_app.db.inventory.distinct("Item", {"Item": {"$regex": query, "$options": "i"}})
