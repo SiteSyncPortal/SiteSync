@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, request, session
-from app.models import get_projects, add_project_to_db, delete_project_in_db, get_dpr_data, get_inventory_data,add_inventory_in_db,sell_inventory_in_db,get_matching_items
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from app.models import get_projects, add_project_to_db, delete_project_in_db, get_dpr_data, get_inventory_data, add_inventory_in_db, get_matching_items,  update_inventory_in_db
 
 main = Blueprint('main', __name__)
 
@@ -13,7 +13,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        if (username == 'partner' and password == "partner") or (username == 'account' and password == "account"):  # Example check
+        if (username == 'partner' and password == "partner") or (username == 'account' and password == "account"):  
             session['username'] = username
             return redirect(url_for('main.partner_dashboard'))
     
@@ -43,7 +43,6 @@ def select_report():
 
 @main.route('/add_project', methods=['POST'])
 def add_project():
-    # Get form data
     project_name = request.form.get('project_name').strip()
     location = request.form.get('location').strip()
     start_date = request.form.get('start_date')
@@ -64,20 +63,18 @@ def delete_project():
         return jsonify({'success': True})
     
     return jsonify({'success': False})
- 
+
 @main.route('/projects/<project_name>/<location>', methods=['GET', 'POST'])
 def project_details(project_name, location):
-    pl_value = 1000.00  # Example value, replace with actual logic
-    total_pl_value = 5000.00  # Example value, replace with actual logic
+    pl_value = 1000.00  
+    total_pl_value = 5000.00  
 
-    # Get the DPR data (dates)
     dpr_data = get_dpr_data(project_name, location)
     dpr_dates = [item['Date'] for item in dpr_data]
 
     if request.method == 'POST':
         selected_date = request.form.get('selected_date')
         project_name_input = request.form.get('project_name')
-        # Handle the form submission logic here
         flash(f"Selected date: {selected_date} for project: {project_name_input}")
 
     return render_template('dpr.html', project_name=project_name, 
@@ -86,20 +83,16 @@ def project_details(project_name, location):
                            total_pl_value=total_pl_value,
                            dpr_dates=dpr_dates,
                            dpr_data=dpr_data)
-    
+
 @main.route('/projects/<project_name>/<location>/Inventory', methods=['GET', 'POST'])
 def inventory(project_name, location):
     inventory_data = get_inventory_data(project_name, location)
-    
-    # Extract item names for suggestions
     item_suggestions = [item['Item'].lower() for item in inventory_data]
     return render_template('inventory.html', 
                            project_name=project_name, 
                            location=location, 
                            inventory_data=inventory_data, 
                            item_suggestions=item_suggestions)
-
-
 
 @main.route('/projects/<project_name>/<location>/add_inventory', methods=['POST'])
 def add_inventory(project_name, location):
@@ -111,30 +104,28 @@ def add_inventory(project_name, location):
         flash(f'{item_name}:{quantity} added successfully!')
     return redirect(url_for('main.inventory', project_name=project_name, location=location))
 
-@main.route('/projects/<project_name>/<location>/sell_inventory', methods=['POST'])
-def sell_inventory(project_name, location):
-    item_names = request.form.getlist('item_name[]')
-    quantities = request.form.getlist('quantity[]')
-    flag = 0
-    for item_name, quantity in zip(item_names, quantities):
-        result = sell_inventory_in_db(project_name, location, item_name.strip(), int(quantity))
-        
-        if not result['success']:
-            flash(result['message'])
-            flag = 1
-    if flag == 0:
-        flash('Inventory sold successfully!')
-        
-    return redirect(url_for('main.inventory', project_name=project_name, location=location))
-
 @main.route('/fetch_item_suggestions', methods=['GET'])
 def fetch_item_suggestions():
     query = request.args.get('query', '').strip().lower()
-    print("hi",query)
     if not query:
         return jsonify([])
 
-    # Fetch items from inventory that match the query
     matching_items = get_matching_items(query) 
-   
     return jsonify(matching_items)
+
+@main.route('/projects/<project_name>/<location>/update_inventory', methods=['POST'])
+def update_inventory(project_name, location):
+    item_names = request.form.getlist('item_name[]')
+    new_quantities = request.form.getlist('quantity[]')
+    old_quantities = request.form.getlist('old_quantity[]')
+ 
+    # Pair item names with new and old quantities
+    items = zip(item_names, new_quantities, old_quantities)
+    result = update_inventory_in_db(project_name, location, items)
+
+    if result['success']:
+        flash(result['message'], 'success')
+    else:
+        flash(result['message'], 'error')
+
+    return redirect(url_for('main.inventory', project_name=project_name, location=location))

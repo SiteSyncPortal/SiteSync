@@ -11,20 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
             document.getElementById(this.dataset.tab).classList.add('active');
         });
+    
     });
 
-    // Initialize autocomplete for both Add and Sell Inventory tabs
+    // Initialize autocomplete for Add Inventory tabs
     initializeAutocomplete('inventory-entries', false);
-    initializeAutocomplete('sell-entries', true);
 
     // Add new inventory entry
     document.getElementById('add-entry').addEventListener('click', function() {
         addNewItem('inventory-entries', 'add', false);
-    });
-
-    // Add new sell entry
-    document.getElementById('add-sell-entry').addEventListener('click', function() {
-        addNewItem('sell-entries', 'sell', true);
     });
 
     // Hide suggestions dropdown when clicking outside
@@ -35,6 +30,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 suggestionBox.style.display = 'none';
             });
         }
+    });
+    // Enable editing of quantity fields
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const row = this.closest('tr');
+            const quantityInput = row.querySelector('input[name="quantity[]"]');
+            quantityInput.removeAttribute('readonly');
+            quantityInput.focus();
+        });
+    });
+
+
+    // Search functionality
+    const searchInput = document.getElementById('inventory-search');
+    searchInput.addEventListener('input', function() {
+        const filter = searchInput.value.toLowerCase();
+        const rows = document.querySelectorAll('#inventory-table tbody tr');
+
+        rows.forEach(row => {
+            const itemName = row.querySelector('td').textContent.toLowerCase();
+            if (itemName.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     });
 });
 

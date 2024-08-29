@@ -16,48 +16,13 @@ header h1 {
     letter-spacing: 1px;
 }
 
-.tabs {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #ddd;
-}
-
-.tab-button {
-    background-color: transparent;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: color 0.3s, border-bottom 0.3s;
-}
-
-.tab-button.active {
-    color: #007bff;
-    border-bottom: 2px solid #007bff;
-}
-
-.tab-button:hover {
-    color: #0056b3;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-.inventory-entry,
-.sell-entry {
+.inventory-entry {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
 }
 
-.inventory-entry label,
-.sell-entry label {
+.inventory-entry label {
     margin-right: 10px;
     font-size: 14px;
     color: #555;
@@ -65,9 +30,7 @@ header h1 {
 }
 
 .inventory-entry input[type="text"],
-.sell-entry input[type="text"],
-.inventory-entry input[type="number"],
-.sell-entry input[type="number"] {
+.inventory-entry input[type="number"] {
     flex: 1;
     padding: 8px;
     border: 1px solid #ccc;
@@ -76,8 +39,7 @@ header h1 {
     margin-right: 10px;
 }
 
-#add-entry,
-#add-sell-entry {
+#add-entry {
     background-color: #007bff;
     color: white;
     padding: 8px 12px;
@@ -88,8 +50,7 @@ header h1 {
     margin-bottom: 15px;
 }
 
-#add-entry:hover,
-#add-sell-entry:hover {
+#add-entry:hover {
     background-color: #0056b3;
 }
 
@@ -112,6 +73,7 @@ button[type="submit"]:hover {
     position: relative;
     display: inline-block;
 }
+
 .suggestions-dropdown {
     position: absolute;
     border: 1px solid #ccc;
@@ -132,6 +94,7 @@ button[type="submit"]:hover {
 .suggestion-item:hover {
     background-color: #f0f0f0;
 }
+
 /* Ensure the table scales well */
 .inventory-table-container {
     width: 100%;
@@ -140,6 +103,8 @@ button[type="submit"]:hover {
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     background-color: #ffffff;
+    max-height: 400px; /* Set a maximum height for the container */
+    overflow-y: auto; /* Enable vertical scrolling if content exceeds the max-height */
 }
 
 table.inventory-table {
