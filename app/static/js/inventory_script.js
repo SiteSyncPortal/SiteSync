@@ -57,6 +57,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    // delete button
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemName = this.getAttribute('data-item');
+            const deleteUrl = this.getAttribute('data-url');
+            
+            if (confirm(`Are you sure you want to delete ${itemName}?`)) {
+                // Send a POST request to delete the item
+                fetch(deleteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ item_name: itemName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the row from the table
+                        this.closest('tr').remove();
+                    } else {
+                        alert('Failed to delete the item. Please try again.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    });
 });
 
 function initializeAutocomplete(containerId, restrictToSuggestions) {
@@ -151,4 +179,6 @@ function addNewItem(containerId, prefix, restrictToSuggestions) {
             }
         });
     }
+
 }
+    

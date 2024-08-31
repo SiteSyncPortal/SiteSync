@@ -39,7 +39,7 @@
                             <tr>
                                 <th>Item</th>
                                 <th>Quantity</th>
-                                <th>Edit</th>
+
                             </tr>
                         </thead>
                         <tbody>
@@ -53,6 +53,9 @@
                                 </td>
                                 <td>
                                     <button type="button" class="edit-btn">Edit</button>
+                                </td>
+                                <td>
+                                    <button type="button" class="delete-btn" data-item="{{ item['Item'] }}" data-url="{{ url_for('main.delete_inventory_item', project_name=project_name, location=location) }}">Delete</button>
                                 </td>
                             </tr>
                             {% endfor %}
