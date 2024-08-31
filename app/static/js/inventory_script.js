@@ -141,8 +141,18 @@ function addNewItem(containerId, prefix, restrictToSuggestions) {
         <div id="${prefix}-suggestions-${newIndex}" class="suggestions-dropdown"></div>
         <label for="${prefix}-quantity-${newIndex}">Quantity:</label>
         <input type="number" id="${prefix}-quantity-${newIndex}" name="quantity[]" min="1" required>
+        <button type="button" class="delete-entry-btn">Delete</button>
     `;
     container.appendChild(newEntry);
+
+    // Add delete functionality to the new button
+    const deleteButton = newEntry.querySelector('.delete-entry-btn');
+    deleteButton.addEventListener('click', function() {
+        newEntry.remove();
+    });
+
+    // Reapply the autocomplete functionality to the new item input field
+    initializeAutocomplete(newEntry.id, restrictToSuggestions);
 
     // Reapply the autocomplete functionality to the new item input field
     const input = newEntry.querySelector('input[type="text"]');
