@@ -18,6 +18,8 @@ from app.models import (
     get_matching_items,
     update_inventory_in_db,
     delete_inventory_item_in_db,
+    get_inventory_timestamp_in_db,
+    get_inventory_by_timestamp,
 )
 
 main = Blueprint("main", __name__)
@@ -124,6 +126,7 @@ def project_details(project_name, location):
 @main.route("/projects/<project_name>/<location>/Inventory", methods=["GET", "POST"])
 def inventory(project_name, location):
     inventory_data = get_inventory_data(project_name, location)
+    get_inventory_timestamp_in_db(project_name, location)
     item_suggestions = [item["Item"].lower() for item in inventory_data]
     return render_template(
         "inventory.html",
@@ -138,10 +141,14 @@ def inventory(project_name, location):
 def add_inventory(project_name, location):
     item_names = request.form.getlist("item_name[]")
     quantities = request.form.getlist("quantity[]")
+    dates = request.form.getlist("date[]")
 
-    for item_name, quantity in zip(item_names, quantities):
-        add_inventory_in_db(project_name, location, item_name.strip(), int(quantity))
-        flash(f"{item_name}:{quantity} added successfully!")
+    for item_name, quantity, date in zip(item_names, quantities, dates):
+        # Store the data in the inventory
+        add_inventory_in_db(
+            project_name, location, item_name.strip(), int(quantity), date
+        )
+        flash(f"{item_name}:{quantity} added successfully on {date}!")
     return redirect(
         url_for("main.inventory", project_name=project_name, location=location)
     )
@@ -183,13 +190,23 @@ def update_inventory(project_name, location):
 def delete_inventory_item(project_name, location):
     data = request.json
     item_name = data.get("item_name")
-    print("item_name=======", item_name)
     if item_name:
         result = delete_inventory_item_in_db(project_name, location, item_name)
-        print("result----", result)
         if result["success"]:
             return jsonify({"success": True})
         else:
             return jsonify({"success": False, "message": result["message"]})
 
     return jsonify({"success": False, "message": "Item name not provided"})
+
+
+@main.route(
+    "/projects/<project_name>/<location>/fetch_inventory_by_date", methods=["GET"]
+)
+def fetch_inventory_by_date(project_name, location):
+    selected_date = request.args.get("date")
+    if not selected_date:
+        return jsonify([])
+
+    inventory_data = get_inventory_by_timestamp(project_name, location, selected_date)
+    return jsonify(inventory_data)

@@ -156,3 +156,13 @@ table.inventory-table td {
 .delete-entry-btn:hover {
     background-color: #c82333;
 }
+.inventory-entry input[type="text"],
+.inventory-entry input[type="number"],
+.inventory-entry input[type="date"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 10px;
+}

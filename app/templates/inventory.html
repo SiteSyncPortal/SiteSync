@@ -12,6 +12,7 @@
         <header>
             <h1>Inventory Management</h1>
         </header>
+        <!-- Flash messages for success or error notifications -->
         {% with messages = get_flashed_messages() %}
             {% if messages %}
               <div class="alert alert-danger">
@@ -29,7 +30,17 @@
             <label for="inventory-search">Search Inventory:</label>
             <input type="text" id="inventory-search" placeholder="Search by item name...">
         </div>
+        <div id="inventory-data"
+            data-project-name="{{ project_name }}"
+            data-location="{{ location }}">
+        </div>
+        <!-- Date Picker for filtering by timestamp -->
+        <div class="date-filter-container">
+            <label for="timestamp-date">Filter by Date:</label>
+            <input type="date" id="timestamp-date">
+        </div>
 
+        <!-- Inventory Table -->
         <form method="POST" action="{{ url_for('main.update_inventory', project_name=project_name, location=location) }}">
             <div class="inventory-table-container">
                 <h2>Current Inventory</h2>
@@ -39,7 +50,8 @@
                             <tr>
                                 <th>Item</th>
                                 <th>Quantity</th>
-
+                                <th>Edit</th>
+                                <th>Delete</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -70,7 +82,7 @@
             </div>
         </form>
 
-        <!-- Add Inventory Tab -->
+        <!-- Add Inventory Section -->
         <div class="tab-content active" id="add-inventory">
             <h2>Add Inventory</h2>
             <form method="POST" action="{{ url_for('main.add_inventory', project_name=project_name, location=location)}}" id="addInventoryForm">
@@ -81,6 +93,9 @@
                         <div id="add-suggestions-1" class="suggestions-dropdown"></div>
                         <label for="add-quantity-1">Quantity:</label>
                         <input type="number" id="add-quantity-1" name="quantity[]" min="1" required>
+                        <label for="add-date-1">Date:</label>
+                        <input type="date" id="add-date-1" name="date[]" required>
+                        <button type="button" class="delete-entry-btn">Delete</button>
                     </div>
                 </div>
                 <button type="button" id="add-entry">Add Another Item</button>

@@ -2,9 +2,12 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from flask import current_app, flash
 from bson.objectid import ObjectId
+from datetime import datetime
+import pytz
 
 
 def init_app(app):
+    global client
     uri = app.config["MONGO_URI"]
     client = MongoClient(uri, server_api=ServerApi("1"))
     app.db = client.get_database("SiteSync")
@@ -78,11 +81,30 @@ def get_inventory_data(project_name, location):
     return data
 
 
-def add_inventory_in_db(project_name, location, item_name, quantity):
+def add_inventory_in_db(project_name, location, item_name, quantity, date):
+    # Assume you have a UTC datetime from your database
+    utc_time = datetime.utcnow()
+    # Convert UTC to a specific timezone (e.g., IST)
+    timezone = pytz.timezone("Asia/Kolkata")
+    local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(timezone)
+    formatted_time = local_time.strftime("%Y-%m-%d")
+    # Convert UTC to a specific timezone (e.g., IST)
+
     result = current_app.db.inventory.update_one(
         {"Project": project_name, "location": location, "Item": item_name},
-        {"$inc": {"Quantity": quantity}},
+        {"$inc": {"Quantity": quantity}, "$set": {"Date": date}},
         upsert=True,
+    )
+    print(formatted_time)
+    # Insert a timestamp record for this addition
+    current_app.db.inventory_time_stamp.insert_one(
+        {
+            "Project": project_name,
+            "location": location,
+            "Item": item_name,
+            "Quantity": quantity,
+            "time_stamp": formatted_time,  # Use UTC time
+        }
     )
     return result
 
@@ -95,6 +117,12 @@ def get_matching_items(query):
 
 def update_inventory_in_db(project_name, location, items):
     try:
+        # Assume you have a UTC datetime from your database
+        utc_time = datetime.utcnow()
+        # Convert UTC to a specific timezone (e.g., IST)
+        timezone = pytz.timezone("Asia/Kolkata")
+        local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(timezone)
+        formatted_time = local_time.strftime("%Y-%m-%d")
         for item_name, new_quantity, old_quantity in items:
             # Update only if the quantity has changed
             if int(new_quantity) != int(old_quantity):
@@ -109,6 +137,16 @@ def update_inventory_in_db(project_name, location, items):
                         "message": f"Item '{item_name}' not found in inventory.",
                     }
 
+                current_app.db.inventory_time_stamp.insert_one(
+                    {
+                        "Project": project_name,
+                        "location": location,
+                        "Item": item_name,
+                        "Quantity": int(new_quantity),
+                        "time_stamp": formatted_time,  # Use UTC time
+                    }
+                )
+
         return {"success": True, "message": "Inventory updated successfully!"}
 
     except Exception as e:
@@ -121,10 +159,29 @@ def update_inventory_in_db(project_name, location, items):
 
 def delete_inventory_item_in_db(project_name, location, item_name):
     try:
+        # Assume you have a UTC datetime from your database
+        utc_time = datetime.utcnow()
+
+        # Convert UTC to a specific timezone (e.g., IST)
+        timezone = pytz.timezone("Asia/Kolkata")
+        local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(timezone)
+        formatted_time = local_time.strftime("%Y-%m-%d")
+
         result = current_app.db.inventory.delete_one(
             {"Project": project_name, "location": location, "Item": item_name}
         )
         if result.deleted_count == 1:
+            print("local time===", local_time)
+            # Insert a timestamp record for this deletion
+            current_app.db.inventory_time_stamp.insert_one(
+                {
+                    "Project": project_name,
+                    "location": location,
+                    "Item": item_name,
+                    "Quantity": 0,
+                    "time_stamp": formatted_time,  # Use UTC time
+                }
+            )
             return {
                 "success": True,
                 "message": f"Item '{item_name}' deleted successfully.",
@@ -137,3 +194,33 @@ def delete_inventory_item_in_db(project_name, location, item_name):
             "success": False,
             "message": "An error occurred while deleting the item.",
         }
+
+
+def get_inventory_timestamp_in_db(project_name, location):
+    try:
+        collection_str = "inventory_timestamp_" + project_name + "_" + location
+
+        database = client["SiteSync"]
+        collection_name = database[collection_str]
+        print(collection_name)
+        print(list(current_app.db.collection_name.find()))
+    except Exception as e:
+        print(e)
+
+    pass
+
+
+def get_inventory_by_timestamp(project_name, location, selected_date):
+
+    print(selected_date, project_name, location)
+    timestamp_data = list(
+        current_app.db.inventory_time_stamp.find(
+            {"Project": project_name, "location": location, "time_stamp": selected_date}
+        )
+    )
+    print("nithin---", timestamp_data)
+    # Convert ObjectId to string for each item
+    for item in timestamp_data:
+        item["_id"] = str(item["_id"])
+
+    return timestamp_data

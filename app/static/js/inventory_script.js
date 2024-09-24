@@ -1,46 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab functionality
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
+    // Get project_name and location from data attributes
+    const inventoryData = document.getElementById('inventory-data');
+    const projectName = inventoryData.getAttribute('data-project-name');
+    const location = inventoryData.getAttribute('data-location');
 
-            this.classList.add('active');
-            document.getElementById(this.dataset.tab).classList.add('active');
-        });
-    
-    });
-
-    // Initialize autocomplete for Add Inventory tabs
-    initializeAutocomplete('inventory-entries', false);
-
-    // Add new inventory entry
-    document.getElementById('add-entry').addEventListener('click', function() {
-        addNewItem('inventory-entries', 'add', false);
-    });
-
-    // Hide suggestions dropdown when clicking outside
-    document.addEventListener('click', function(event) {
-        const isClickInside = event.target.closest('.autocomplete');
-        if (!isClickInside) {
-            document.querySelectorAll('.suggestions-dropdown').forEach(suggestionBox => {
-                suggestionBox.style.display = 'none';
-            });
-        }
-    });
-    // Enable editing of quantity fields
-    document.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const row = this.closest('tr');
-            const quantityInput = row.querySelector('input[name="quantity[]"]');
-            quantityInput.removeAttribute('readonly');
-            quantityInput.focus();
-        });
-    });
-
+    // Now you can use projectName and location in your fetch function
+    console.log(`Project Name: ${projectName}`);
+    console.log(`Location: ${location}`);
 
     // Search functionality
     const searchInput = document.getElementById('inventory-search');
@@ -50,145 +17,128 @@ document.addEventListener('DOMContentLoaded', function() {
 
         rows.forEach(row => {
             const itemName = row.querySelector('td').textContent.toLowerCase();
-            if (itemName.includes(filter)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = itemName.includes(filter) ? '' : 'none';
         });
     });
-    // delete button
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const itemName = this.getAttribute('data-item');
-            const deleteUrl = this.getAttribute('data-url');
-            
-            if (confirm(`Are you sure you want to delete ${itemName}?`)) {
-                // Send a POST request to delete the item
-                fetch(deleteUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ item_name: itemName })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Remove the row from the table
-                        this.closest('tr').remove();
-                    } else {
-                        alert('Failed to delete the item. Please try again.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        });
+
+    // Handle Date Selection to fetch inventory by timestamp
+    const timestampInput = document.getElementById('timestamp-date');
+    timestampInput.addEventListener('change', function() {
+        const selectedDate = this.value;
+        fetchInventoryByDate(selectedDate);
     });
-});
 
-function initializeAutocomplete(containerId, restrictToSuggestions) {
-    const container = document.getElementById(containerId);
-    const itemSuggestions = JSON.parse(document.getElementById('item-suggestions-data').textContent);
+    // Function to fetch inventory by date
+    function fetchInventoryByDate(date) {
+        const url = `/projects/${projectName}/${location}/fetch_inventory_by_date?date=${date}`;
 
-    container.querySelectorAll('.autocomplete input[type="text"]').forEach(input => {
-        input.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const suggestionBox = document.getElementById(`${input.id.replace('item-name', 'suggestions')}`);
-            suggestionBox.innerHTML = '';
-            const suggestions = itemSuggestions.filter(item => item.startsWith(query));
+        fetch(url)
+            .then(response => response.json())
+            .then(data => updateInventoryTable(data))
+            .catch(error => console.error('Error fetching data:', error));
+    }
 
-            if (suggestions.length > 0) {
-                suggestions.forEach(suggestion => {
-                    const div = document.createElement('div');
-                    div.textContent = suggestion;
-                    div.classList.add('suggestion-item');
-                    div.onclick = () => {
-                        input.value = suggestion;
-                        suggestionBox.style.display = 'none';
-                        input.setAttribute('data-selected', 'true');
-                    };
-                    suggestionBox.appendChild(div);
-                });
-                suggestionBox.style.display = 'block';
-                input.removeAttribute('data-selected');
-            } else {
-                suggestionBox.style.display = 'none';
-            }
+    // Function to update inventory table with fetched data
+    function updateInventoryTable(data) {
+        const tableBody = document.querySelector('#inventory-table tbody');
+        tableBody.innerHTML = '';  // Clear the current table
+
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.Item}</td>
+                <td>
+                    <input type="number" name="quantity[]" value="${item.Quantity}" min="0" readonly>
+                    <input type="hidden" name="old_quantity[]" value="${item.Quantity}">
+                    <input type="hidden" name="item_name[]" value="${item.Item}">
+                </td>
+                <td>
+                    <button type="button" class="edit-btn">Edit</button>
+                </td>
+                <td>
+                    <button type="button" class="delete-btn" data-item="${item.Item}" data-url="/projects/${projectName}/${location}/delete_inventory_item">Delete</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
         });
 
-        // Apply restriction only for inputs in the Sell Inventory tab
-        if (restrictToSuggestions) {
-            input.addEventListener('blur', function() {
-                if (!this.hasAttribute('data-selected')) {
-                    this.value = '';  // Clear the input if the user hasn't selected a suggestion
-                }
+        // Re-apply event listeners for edit and delete buttons
+        addEditButtonListeners();
+        addDeleteButtonListeners();
+    }
+
+    // Add Edit Button Functionality
+    function addEditButtonListeners() {
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const quantityInput = row.querySelector('input[name="quantity[]"]');
+                quantityInput.removeAttribute('readonly');
+                quantityInput.focus();
             });
-        }
-    });
-}
-
-// Function to add a new item row in the form
-function addNewItem(containerId, prefix, restrictToSuggestions) {
-    const container = document.getElementById(containerId);
-    const newIndex = container.children.length + 1;
-
-    const newEntry = document.createElement('div');
-    newEntry.classList.add('inventory-entry', 'autocomplete');
-    newEntry.innerHTML = `
-        <label for="${prefix}-item-name-${newIndex}">Item:</label>
-        <input type="text" id="${prefix}-item-name-${newIndex}" name="item_name[]" autocomplete="off" required>
-        <div id="${prefix}-suggestions-${newIndex}" class="suggestions-dropdown"></div>
-        <label for="${prefix}-quantity-${newIndex}">Quantity:</label>
-        <input type="number" id="${prefix}-quantity-${newIndex}" name="quantity[]" min="1" required>
-        <button type="button" class="delete-entry-btn">Delete</button>
-    `;
-    container.appendChild(newEntry);
-
-    // Add delete functionality to the new button
-    const deleteButton = newEntry.querySelector('.delete-entry-btn');
-    deleteButton.addEventListener('click', function() {
-        newEntry.remove();
-    });
-
-    // Reapply the autocomplete functionality to the new item input field
-    initializeAutocomplete(newEntry.id, restrictToSuggestions);
-
-    // Reapply the autocomplete functionality to the new item input field
-    const input = newEntry.querySelector('input[type="text"]');
-    input.addEventListener('input', function() {
-        const query = this.value.toLowerCase();
-        const suggestionBox = document.getElementById(`${prefix}-suggestions-${newIndex}`);
-        suggestionBox.innerHTML = '';
-        const suggestions = JSON.parse(document.getElementById('item-suggestions-data').textContent).filter(item => item.startsWith(query));
-
-        if (suggestions.length > 0) {
-            suggestions.forEach(suggestion => {
-                const div = document.createElement('div');
-                div.textContent = suggestion;
-                div.classList.add('suggestion-item');
-                div.onclick = () => {
-                    input.value = suggestion;
-                    suggestionBox.style.display = 'none';
-                    input.setAttribute('data-selected', 'true');
-                };
-                suggestionBox.appendChild(div);
-            });
-            suggestionBox.style.display = 'block';
-            input.removeAttribute('data-selected');
-        } else {
-            suggestionBox.style.display = 'none';
-        }
-    });
-
-    // Apply restriction only if in the Sell Inventory tab
-    if (restrictToSuggestions) {
-        input.addEventListener('blur', function() {
-            if (!this.hasAttribute('data-selected')) {
-                this.value = '';  // Clear the input if the user hasn't selected a suggestion
-            }
         });
     }
 
-}
-    
+    // Add Delete Button Functionality
+    function addDeleteButtonListeners() {
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const itemName = this.getAttribute('data-item');
+                const deleteUrl = this.getAttribute('data-url');
+
+                if (confirm(`Are you sure you want to delete ${itemName}?`)) {
+                    fetch(deleteUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ item_name: itemName })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.closest('tr').remove(); // Remove row from table
+                        } else {
+                            alert('Failed to delete the item.');
+                        }
+                    })
+                    .catch(error => console.error('Error deleting item:', error));
+                }
+            });
+        });
+    }
+
+    // Add New Inventory Item
+    document.getElementById('add-entry').addEventListener('click', function() {
+        addNewItem('inventory-entries', 'add', false);
+    });
+
+    // Function to add a new item row in the Add Inventory Form
+    function addNewItem(containerId, prefix, restrictToSuggestions) {
+        const container = document.getElementById(containerId);
+        const newIndex = container.children.length + 1;
+
+        const newEntry = document.createElement('div');
+        newEntry.classList.add('inventory-entry', 'autocomplete');
+        newEntry.innerHTML = `
+            <label for="${prefix}-item-name-${newIndex}">Item:</label>
+            <input type="text" id="${prefix}-item-name-${newIndex}" name="item_name[]" autocomplete="off" required>
+            <div id="${prefix}-suggestions-${newIndex}" class="suggestions-dropdown"></div>
+            <label for="${prefix}-quantity-${newIndex}">Quantity:</label>
+            <input type="number" id="${prefix}-quantity-${newIndex}" name="quantity[]" min="1" required>
+            <label for="${prefix}-date-${newIndex}">Date:</label>
+            <input type="date" id="${prefix}-date-${newIndex}" name="date[]" required>
+            <button type="button" class="delete-entry-btn">Delete</button>
+        `;
+        container.appendChild(newEntry);
+
+        // Reapply delete button functionality for the new item
+        newEntry.querySelector('.delete-entry-btn').addEventListener('click', function() {
+            newEntry.remove();
+        });
+    }
+
+    // Initial setup: reapply listeners after DOM is loaded
+    addEditButtonListeners();
+    addDeleteButtonListeners();
+});
