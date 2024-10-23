@@ -76,35 +76,43 @@ def get_dpr_data(project_name, location):
 
 def get_inventory_data(project_name, location):
     data = list(
-        current_app.db.inventory.find({"Project": project_name, "location": location})
+        current_app.db.inventory.find(
+            {"project_name": project_name, "location": location}
+        )
     )
     return data
 
 
 def add_inventory_in_db(project_name, location, item_name, quantity, date):
     # Assume you have a UTC datetime from your database
-    utc_time = datetime.utcnow()
-    # Convert UTC to a specific timezone (e.g., IST)
-    timezone = pytz.timezone("Asia/Kolkata")
-    local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(timezone)
-    formatted_time = local_time.strftime("%Y-%m-%d")
-    # Convert UTC to a specific timezone (e.g., IST)
+    if len(date) == 0:
+        utc_time = datetime.utcnow()
+        # Convert UTC to a specific timezone (e.g., IST)
+        timezone = pytz.timezone("Asia/Kolkata")
+        local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(timezone)
+        date = local_time.strftime("%Y-%m-%d")
+        # Convert UTC to a specific timezone (e.g., IST)
 
     result = current_app.db.inventory.update_one(
-        {"Project": project_name, "location": location, "Item": item_name},
-        {"$inc": {"Quantity": quantity}, "$set": {"Date": date}},
+        {"project_name": project_name, "location": location, "Item": item_name},
+        {"$inc": {"Quantity": quantity}, "$max": {"Date": date}},
         upsert=True,
     )
-    print(formatted_time)
+
     # Insert a timestamp record for this addition
-    current_app.db.inventory_time_stamp.insert_one(
+    result = current_app.db.inventory_time_stamp.update_one(
         {
-            "Project": project_name,
+            "project_name": project_name,
             "location": location,
             "Item": item_name,
-            "Quantity": quantity,
-            "time_stamp": formatted_time,  # Use UTC time
-        }
+            "Date": date,  # Compare only the date
+        },
+        {
+            "$set": {
+                "Quantity": int(quantity),  # Update quantity
+            }
+        },
+        upsert=True,  # This will insert if no matching document is found
     )
     return result
 
@@ -115,6 +123,7 @@ def get_matching_items(query):
     )
 
 
+# When clicking update button in account login
 def update_inventory_in_db(project_name, location, items):
     try:
         # Assume you have a UTC datetime from your database
@@ -125,10 +134,15 @@ def update_inventory_in_db(project_name, location, items):
         formatted_time = local_time.strftime("%Y-%m-%d")
         for item_name, new_quantity, old_quantity in items:
             # Update only if the quantity has changed
+            print(item_name, new_quantity, old_quantity)
             if int(new_quantity) != int(old_quantity):
                 result = current_app.db.inventory.update_one(
-                    {"Project": project_name, "location": location, "Item": item_name},
-                    {"$set": {"Quantity": int(new_quantity)}},
+                    {
+                        "project_name": project_name,
+                        "location": location,
+                        "Item": item_name,
+                    },
+                    {"$set": {"Quantity": int(new_quantity), "Date": formatted_time}},
                 )
 
                 if result.matched_count == 0:
@@ -137,17 +151,23 @@ def update_inventory_in_db(project_name, location, items):
                         "message": f"Item '{item_name}' not found in inventory.",
                     }
 
-                current_app.db.inventory_time_stamp.insert_one(
+                result = current_app.db.inventory_time_stamp.update_one(
                     {
-                        "Project": project_name,
+                        "project_name": project_name,
                         "location": location,
                         "Item": item_name,
-                        "Quantity": int(new_quantity),
-                        "time_stamp": formatted_time,  # Use UTC time
-                    }
+                        "Date": formatted_time,  # Compare only the date
+                    },
+                    {"$set": {"Quantity": int(new_quantity), "Date": formatted_time}},
+                    upsert=True,  # This will insert if no matching document is found
                 )
 
-        return {"success": True, "message": "Inventory updated successfully!"}
+                if result.matched_count > 0:
+                    print("Existing entry updated.")
+                else:
+                    print("New entry created.")
+
+                return {"success": True, "message": "Inventory updated successfully!"}
 
     except Exception as e:
         print(f"Error updating inventory: {e}")
@@ -159,35 +179,16 @@ def update_inventory_in_db(project_name, location, items):
 
 def delete_inventory_item_in_db(project_name, location, item_name):
     try:
-        # Assume you have a UTC datetime from your database
-        utc_time = datetime.utcnow()
-
-        # Convert UTC to a specific timezone (e.g., IST)
-        timezone = pytz.timezone("Asia/Kolkata")
-        local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(timezone)
-        formatted_time = local_time.strftime("%Y-%m-%d")
-
-        result = current_app.db.inventory.delete_one(
-            {"Project": project_name, "location": location, "Item": item_name}
+        current_app.db.inventory.delete_one(
+            {"project_name": project_name, "location": location, "Item": item_name}
         )
-        if result.deleted_count == 1:
-            print("local time===", local_time)
-            # Insert a timestamp record for this deletion
-            current_app.db.inventory_time_stamp.insert_one(
-                {
-                    "Project": project_name,
-                    "location": location,
-                    "Item": item_name,
-                    "Quantity": 0,
-                    "time_stamp": formatted_time,  # Use UTC time
-                }
-            )
-            return {
-                "success": True,
-                "message": f"Item '{item_name}' deleted successfully.",
-            }
-        else:
-            return {"success": False, "message": f"Item '{item_name}' not found."}
+        current_app.db.inventory_time_stamp.delete_many(
+            {"project_name": project_name, "location": location, "Item": item_name}
+        )
+        return {
+            "success": True,
+            "message": f"Item '{item_name}' deleted successfully.",
+        }
     except Exception as e:
         print(f"Error deleting item: {e}")
         return {
@@ -212,15 +213,43 @@ def get_inventory_timestamp_in_db(project_name, location):
 
 def get_inventory_by_timestamp(project_name, location, selected_date):
 
-    print(selected_date, project_name, location)
     timestamp_data = list(
         current_app.db.inventory_time_stamp.find(
-            {"Project": project_name, "location": location, "time_stamp": selected_date}
+            {
+                "project_name": project_name,
+                "location": location,
+                "Date": selected_date,
+            }
         )
     )
-    print("nithin---", timestamp_data)
     # Convert ObjectId to string for each item
     for item in timestamp_data:
         item["_id"] = str(item["_id"])
 
     return timestamp_data
+
+
+from flask import current_app
+import calendar
+
+
+def get_inventory_by_month(project_name, location, selected_month):
+    # Query the inventory based on the month
+    # Assume selected_month is in the format 'YYYY-MM'
+    start_date = f"{selected_month}-01"
+    end_date = f"{selected_month}-31"  # Assuming a month can have up to 31 days
+    print("start_date==", start_date, end_date)
+    inventory_data = list(
+        current_app.db.inventory_time_stamp.find(
+            {
+                "project_name": project_name,
+                "location": location,
+                "Date": {"$gte": start_date, "$lte": end_date},
+            }
+        )
+    )
+    # Convert ObjectId to string and return data
+    for item in inventory_data:
+        item["_id"] = str(item["_id"])
+
+    return inventory_data

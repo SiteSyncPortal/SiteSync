@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/db_style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/inventory_style.css') }}">
+    <title>Track Inventory</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Track Inventory for Selected Month</h1>
+        </header>
+
+        <!-- Form for selecting the month -->
+        <form method="GET" action="{{ url_for('main.fetch_inventory_by_month', project_name=project_name, location=location) }}">
+            <label for="month">Select Month:</label>
+            <input type="month" id="month" name="month" required>
+            <button type="submit">Submit</button>
+        </form>
+
+        <!-- Display Inventory Table if data exists -->
+        {% if inventory_by_date %}
+        <div class="inventory-table-container">
+            <h2>Inventory for Selected Month: {{ selected_month }}</h2>
+            <table id="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        {% for item in all_items %}
+                            <th>{{ item }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for date, items in inventory_by_date.items() %}
+                    <tr>
+                        <td>{{ date }}</td>
+                        {% for item in all_items %}
+                            <td>{{ items[item] if item in items else 0 }}</td>  <!-- Show 0 if no data for item -->
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No inventory data available for the selected month.</p>
+        {% endif %}
+        
+    </div>
+
+    <script src="{{ url_for('static', filename='js/track_inventory_script.js') }}"></script>
+</body>
+</html>

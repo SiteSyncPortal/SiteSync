@@ -50,8 +50,12 @@
                             <tr>
                                 <th>Item</th>
                                 <th>Quantity</th>
+                                <th>Last Updated</th>
+                                {% if username == 'account' %}
                                 <th>Edit</th>
                                 <th>Delete</th>
+                                {% endif %}
+                                
                             </tr>
                         </thead>
                         <tbody>
@@ -63,12 +67,15 @@
                                     <input type="hidden" name="old_quantity[]" value="{{ item['Quantity'] }}">
                                     <input type="hidden" name="item_name[]" value="{{ item['Item'] }}">
                                 </td>
+                                <td>{{ item['Date'] }}</td>
+                                {% if username == 'account' %}
                                 <td>
                                     <button type="button" class="edit-btn">Edit</button>
                                 </td>
                                 <td>
                                     <button type="button" class="delete-btn" data-item="{{ item['Item'] }}" data-url="{{ url_for('main.delete_inventory_item', project_name=project_name, location=location) }}">Delete</button>
                                 </td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -77,12 +84,15 @@
             </div>
 
             <!-- Update Inventory Button -->
-            <div class="update-button-container">
-                <button type="submit">Update Inventory</button>
-            </div>
+            {% if username == 'account' %}
+                <div class="update-button-container">
+                    <button type="submit">Update Inventory</button>
+                </div>
+            {% endif %}
         </form>
 
         <!-- Add Inventory Section -->
+        {% if username == 'account' %}
         <div class="tab-content active" id="add-inventory">
             <h2>Add Inventory</h2>
             <form method="POST" action="{{ url_for('main.add_inventory', project_name=project_name, location=location)}}" id="addInventoryForm">
@@ -102,7 +112,8 @@
                 <button type="submit">Submit</button>
             </form>
         </div>
-
+        {% endif %}
+        
         <!-- Hidden container for item suggestions -->
         <div id="item-suggestions-data" style="display:none;">
             {{ item_suggestions|tojson }}

@@ -20,6 +20,7 @@ from app.models import (
     delete_inventory_item_in_db,
     get_inventory_timestamp_in_db,
     get_inventory_by_timestamp,
+    get_inventory_by_month,
 )
 
 main = Blueprint("main", __name__)
@@ -67,11 +68,21 @@ def projects():
 def select_report():
     project_name = request.args.get("project_name")
     project_location = request.args.get("project_location")
-    return render_template(
-        "select_report.html",
-        project_name=project_name,
-        project_location=project_location,
-    )
+    username = session.get("username")
+    if username == "account":
+        return render_template(
+            "select_report_account.html",
+            project_name=project_name,
+            project_location=project_location,
+            username=username,
+        )
+    else:
+        return render_template(
+            "select_report_partner.html",
+            project_name=project_name,
+            project_location=project_location,
+            username=username,
+        )
 
 
 @main.route("/add_project", methods=["POST"])
@@ -126,23 +137,36 @@ def project_details(project_name, location):
 @main.route("/projects/<project_name>/<location>/Inventory", methods=["GET", "POST"])
 def inventory(project_name, location):
     inventory_data = get_inventory_data(project_name, location)
-    get_inventory_timestamp_in_db(project_name, location)
+    # get_inventory_timestamp_in_db(project_name, location)
     item_suggestions = [item["Item"].lower() for item in inventory_data]
+    username = session.get("username")
     return render_template(
         "inventory.html",
         project_name=project_name,
         location=location,
         inventory_data=inventory_data,
         item_suggestions=item_suggestions,
+        username=username,
     )
 
 
+@main.route(
+    "/projects/<project_name>/<location>/Track-Inventory", methods=["GET", "POST"]
+)
+def track_inventory(project_name, location):
+    print("project_name in track inventory", project_name)
+    return render_template(
+        "track_inventory.html", project_name=project_name, location=location
+    )
+
+
+# Add inventory form in account login
 @main.route("/projects/<project_name>/<location>/add_inventory", methods=["POST"])
 def add_inventory(project_name, location):
     item_names = request.form.getlist("item_name[]")
     quantities = request.form.getlist("quantity[]")
     dates = request.form.getlist("date[]")
-
+    print("------------dates----------", dates)
     for item_name, quantity, date in zip(item_names, quantities, dates):
         # Store the data in the inventory
         add_inventory_in_db(
@@ -190,6 +214,7 @@ def update_inventory(project_name, location):
 def delete_inventory_item(project_name, location):
     data = request.json
     item_name = data.get("item_name")
+    print(item_name)
     if item_name:
         result = delete_inventory_item_in_db(project_name, location, item_name)
         if result["success"]:
@@ -200,6 +225,7 @@ def delete_inventory_item(project_name, location):
     return jsonify({"success": False, "message": "Item name not provided"})
 
 
+# In current inventory
 @main.route(
     "/projects/<project_name>/<location>/fetch_inventory_by_date", methods=["GET"]
 )
@@ -210,3 +236,51 @@ def fetch_inventory_by_date(project_name, location):
 
     inventory_data = get_inventory_by_timestamp(project_name, location, selected_date)
     return jsonify(inventory_data)
+
+
+@main.route(
+    "/projects/<project_name>/<location>/fetch_inventory_by_month", methods=["GET"]
+)
+def fetch_inventory_by_month(project_name, location):
+    selected_month = request.args.get("month")
+
+    if not selected_month:
+        return render_template(
+            "track_inventory.html",
+            project_name=project_name,
+            location=location,
+            inventory_by_date={},
+            all_items=[],
+            selected_month=selected_month,
+        )
+
+    # Fetch inventory data for the selected month
+    inventory_data = get_inventory_by_month(project_name, location, selected_month)
+
+    # Process the data into a dictionary, grouping by dates
+    inventory_by_date = {}
+    all_items = set()
+
+    for entry in inventory_data:
+        date = entry["Date"]
+        item = entry["Item"]
+        quantity = entry["Quantity"]
+
+        if date not in inventory_by_date:
+            inventory_by_date[date] = {}
+
+        inventory_by_date[date][item] = quantity
+        all_items.add(item)  # Keep track of all distinct items
+
+    # Sort the data by date (ascending order)
+    sorted_inventory_by_date = dict(sorted(inventory_by_date.items()))
+
+    # Pass data to the template
+    return render_template(
+        "track_inventory.html",
+        project_name=project_name,
+        location=location,
+        inventory_by_date=sorted_inventory_by_date,
+        all_items=sorted(all_items),  # Ensure items are also sorted
+        selected_month=selected_month,
+    )
